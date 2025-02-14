@@ -53,29 +53,25 @@ export class BotUpdate {
   async onMyCars(@Ctx() ctx: Context) {
     await this.botService.onMyCars(ctx);
   }
-  
-  @Hears(
-    /^\d{2}[A-Z]\d{3}[A-Z]{2}$|^\d{2}\d{3}[A-Z]{3}$/
-  )
+
+  @Hears(/^\d{2}[A-Z]\d{3}[A-Z]{2}$|^\d{2}\d{3}[A-Z]{3}$/)
   async onAddCarNumber(@Ctx() ctx: Context) {
     await this.botService.onAddCarNumber(ctx);
   }
-  @Hears(
-    /^19\d{2}$|^201[0-9]$|^202[0-5]$/ 
-  )
+  @Hears(/^19\d{2}$|^201[0-9]$|^202[0-5]$/)
   async onAddCarYear(@Ctx() ctx: Context) {
     await this.botService.onAddCarYear(ctx);
   }
   @Action(/^carDel_+\d+/)
-  async onDeleteCar(@Ctx() ctx: Context){
+  async onDeleteCar(@Ctx() ctx: Context) {
     await this.botService.onDeleteCar(ctx);
   }
 
   @UseFilters(TelegrafExceptionFilter)
   @UseGuards(AdminBotGuard)
-  @Command('admin')
-  async onAdminCommand(@Ctx()ctx: Context){
-    await this.botService.admin_menu(ctx, `Xush Kelibsiz ADMIN 🙋‍♂️`)
+  @Command("admin")
+  async onAdminCommand(@Ctx() ctx: Context) {
+    await this.botService.admin_menu(ctx, `Xush Kelibsiz ADMIN 🙋‍♂️`);
   }
 
   @On("text")
@@ -85,10 +81,9 @@ export class BotUpdate {
 
   @On("message")
   async onMessage(@Ctx() ctx: Context) {
-    await this.botService.OnDeleteMessage(ctx)
+    await this.botService.OnDeleteMessage(ctx);
   }
 
-  
   // }
 
   // @Command('help')

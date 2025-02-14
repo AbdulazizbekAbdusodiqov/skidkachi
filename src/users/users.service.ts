@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  ServiceUnavailableException,
 } from "@nestjs/common";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
@@ -15,8 +16,11 @@ import { MailService } from "../mail/mail.service";
 import { FindUserDto } from "./dto/find-user.dto";
 import { Op } from "sequelize";
 import { BotService } from "src/bot/bot.service";
-import * as otpGenerator from "otp-generator";
+import otpGenerator from "otp-generator";
 import { PhoneUserDto } from "./dto/phone-user.dto";
+import { SmsService } from "src/sms/sms.service";
+import path from "path";
+import fs from "fs";
 
 @Injectable()
 export class UsersService {
@@ -24,7 +28,8 @@ export class UsersService {
     @InjectModel(User) private readonly userModel: typeof User,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
-    private readonly botService: BotService
+    private readonly botService: BotService,
+    private readonly smsService: SmsService,
   ) {}
 
   async getTokens(user: User) {
@@ -135,6 +140,27 @@ export class UsersService {
   remove(id: number) {
     return this.userModel.destroy({ where: { id } });
   }
+
+  async refreshTokenSms() {
+    return await this.smsService.refreshToken();
+  }
+
+  async getSmsTokens() {
+    try {
+      const response = await this.smsService.getToken();
+      const newToken = response.data?.data?.token;
+      if (!newToken) {
+        throw new Error("Token not found in response");
+      }
+      this.updateEnvFile("SMS_TOKEN", newToken); // .env faylni yangilash
+      process.env.SMS_TOKEN = newToken; // Yangi tokenni process.env ichida ham yangilash
+      console.log("Token muvaffaqiyatli yangilandi.");
+    } catch (error) {
+      console.error("Failed to get SMS token:", error.message);
+      throw new InternalServerErrorException("Failed to get SMS token");
+    }
+  }
+
   async findUser(findUserDto: FindUserDto) {
     const { name, email, phone } = findUserDto;
     const where = {};
@@ -171,12 +197,48 @@ export class UsersService {
       specialChars: false,
     });
 
+    //--------------------------------------SMS--------------------------------
+
+    const response = await this.smsService.sendSms(phone_number, otp);
+    console.log(response);
+
+    if (response.status !== 200) {
+      throw new ServiceUnavailableException("OTP yuborishda xatolik");
+    }
+
+    const message =
+      `OTP code has been send to ****` +
+      phone_number.slice(phone_number.length - 4);
+
+    //-------------------------------------------------------------------------
+
     const isSend = this.botService.sendOtp(phone_number, otp);
     if (!isSend) {
       throw new BadRequestException("Avval botdan ro'yxatdan o'ting");
-    } 
+    }
     return {
-      message: "OTP botga yuborildi"
+      message: "OTP botga yuborildi",
+      smsMessage: message,
+    };
+  }
+  private updateEnvFile(key: string, value: string) {
+    try {
+      const envFilePath = path.resolve(__dirname, "../../.env");
+      const envFile = fs.readFileSync(envFilePath, "utf8");
+      const envLines = envFile.split("\n");
+
+      // Har bir qatordan `SMS_TOKEN` ni topamiz va o‘zgartiramiz
+      const newEnvLines = envLines.map((line) => {
+        if (line.startsWith(`${key}=`)) {
+          return `${key}=${value}`;
+        }
+        return line;
+      });
+
+      fs.writeFileSync(envFilePath, newEnvLines.join("\n"));
+      console.log(`.env fayl ichidagi ${key} muvaffaqiyatli yangilandi.`);
+    } catch (error) {
+      console.error(".env faylni yangilashda xatolik:", error.message);
     }
   }
 }

@@ -35,6 +35,9 @@ import { FavoritesModule } from './favorites/favorites.module';
 import { Favorite } from './favorites/models/favorite.model';
 import { Address } from './bot/models/address.model';
 import { Car } from './bot/models/car.model';
+import { SmsModule } from './sms/sms.module';
+import { OtpModule } from './otp/otp.module';
+import { Otp } from './otp/models/otp.model';
 
 @Module({
   imports: [
@@ -70,7 +73,8 @@ import { Car } from './bot/models/car.model';
         Review,
         Favorite,
         Address,
-        Car
+        Car,
+        Otp
       ],
       autoLoadModels: true,
       sync: { alter: true },
@@ -92,6 +96,8 @@ import { Car } from './bot/models/car.model';
     DiscountModule,
     ReviewsModule,
     FavoritesModule,
+    SmsModule,
+    OtpModule,
   ],
   controllers: [],
   providers: [],
