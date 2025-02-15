@@ -58,7 +58,7 @@ export class BotUpdate {
   async onAddCarNumber(@Ctx() ctx: Context) {
     await this.botService.onAddCarNumber(ctx);
   }
-  @Hears(/^19\d{2}$|^201[0-9]$|^202[0-5]$/)
+  @Hears(/^19\d{2}$^20[0-9][0-9]$||^201[0-9]$|^202[0-5]$/)
   async onAddCarYear(@Ctx() ctx: Context) {
     await this.botService.onAddCarYear(ctx);
   }
